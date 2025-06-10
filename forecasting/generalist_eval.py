@@ -114,8 +114,12 @@ def inference(
 
 
 def eval(args):
-    device = torch.device("cuda:%d" % (args.cuda_id))
-    torch.cuda.set_device(device)
+    if torch.cuda.is_available():
+        device = torch.device("cuda:%d" % (args.cuda_id))
+        torch.cuda.set_device(device)
+    else:
+        device = torch.device("cpu")
+        print("CUDA not available, using CPU")
 
     # -------- PARAMS ------- #
     params = get_params(args.data_type, args.data_path)
@@ -141,10 +145,11 @@ def eval(args):
     norcal_dataloader = None
 
     # ------- MODEL: XCODES TO YTIME -------- #
-    model_decode = torch.load(args.model_load_path + 'decode_checkpoint.pth')
+    map_location = device
+    model_decode = torch.load(args.model_load_path + 'decode_checkpoint.pth', map_location=map_location)
 
     # ------- MODEL: MuStd ----------#
-    model_mustd = torch.load(args.model_load_path + 'mustd_checkpoint.pth')
+    model_mustd = torch.load(args.model_load_path + 'mustd_checkpoint.pth', map_location=map_location)
     model_mustd.revin_in = RevIN(
         num_features=Sin, affine=is_affine_revin
     )  # expects as input (B, T, S)
