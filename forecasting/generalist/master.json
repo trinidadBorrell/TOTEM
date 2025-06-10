@@ -1,0 +1,29 @@
+{
+    "start_time": "fill_in_with_your_info",
+    "config file": "fill_in_with_your_info",
+    "save directory": "fill_in_with_your_info",
+    "gpus": 1,
+    "summaries": {
+        "general_seed": 47,
+        "data initialization location": "cpu",
+        "device": "cuda:1",
+        "vqvae_config": {
+            "general_seed": 47,
+            "model_name": "vqvae",
+            "model_save_name": "vqvae_all_9696_REVIN",
+            "pretrained": false,
+            "learning_rate": 0.001,
+            "num_training_updates": 120000,
+            "block_hidden_size": 128,
+            "num_residual_layers": 2,
+            "res_hidden_size": 64,
+            "embedding_dim": 64,
+            "num_embeddings": 256,
+            "commitment_cost": 0.25,
+            "compression_factor": 4,
+            "dataset": "all"
+        },
+        "total_time": 0,
+        "log_path": "fill_in_with_your_info"
+    }
+}
