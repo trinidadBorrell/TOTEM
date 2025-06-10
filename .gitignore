@@ -45,3 +45,7 @@ CVS
 Backup[ ]of[ ]*.pages/
 Backup[ ]of[ ]*.key/
 Backup[ ]of[ ]*.numbers
+
+#trini
+trini/
+process_zero_shot_data/data/pt2/
