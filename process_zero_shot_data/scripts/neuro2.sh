@@ -1,6 +1,6 @@
 python process_zero_shot_data/process_neuro_data.py \
     --patient_num 2 \
-    --base_path '/path/to/nc/file/' \
+    --base_path '/home/triniborrell/home/data/sub-AA048'/ \
     --save_path 'process_zero_shot_data/data/'
 
 #gpu=0

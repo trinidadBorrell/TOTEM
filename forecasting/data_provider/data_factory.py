@@ -1,6 +1,6 @@
 import pdb
 
-from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom,  Dataset_Neuro, Dataset_Saugeen_Web
+from data_provider.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom,  Dataset_Neuro, Dataset_Saugeen_Web, Dataset_Neuro_Custom, Dataset_Neuro_Zero_Shot
 from torch.utils.data import DataLoader
 
 data_dict = {
@@ -10,6 +10,8 @@ data_dict = {
     'ETTm2': Dataset_ETT_minute,
     'custom': Dataset_Custom,
     'neuro': Dataset_Neuro,
+    'neuro_custom': Dataset_Neuro_Custom,
+    'neuro_zero_shot': Dataset_Neuro_Zero_Shot,
     'saugeen_web': Dataset_Saugeen_Web,
 }
 

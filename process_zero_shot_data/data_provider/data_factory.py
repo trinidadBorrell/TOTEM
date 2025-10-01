@@ -1,13 +1,15 @@
-from data_provider.data_loader import Dataset_Neuro, Dataset_Saugeen_Web
+from data_provider.data_loader import Dataset_Neuro, Dataset_Saugeen_Web, Dataset_Neuro_Custom
 from torch.utils.data import DataLoader
 
 data_dict = {
     'neuro': Dataset_Neuro,
+    'neuro_custom': Dataset_Neuro_Custom,
     'saugeen': Dataset_Saugeen_Web,
 }
 
 
 def data_provider(args, flag):
+    print('DATA DICT:', data_dict)
     Data = data_dict[args.data]
     timeenc = 0 if args.embed != 'timeF' else 1
 

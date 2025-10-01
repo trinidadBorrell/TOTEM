@@ -11,24 +11,44 @@ from lib.models.metrics import pearsoncor
 def create_time_series_dataloader(datapath="/data", batchsize=8):
     dataloaders = {}
     for split in ["test"]:
-        # original time series
-        timex_file = os.path.join(datapath, "%s_x_original.npy" % split)
-        timex = np.load(timex_file)
-        timex = torch.from_numpy(timex).to(dtype=torch.float32)
-        timey_file = os.path.join(datapath, "%s_y_original.npy" % split)
-        timey = np.load(timey_file)
-        timey = torch.from_numpy(timey).to(dtype=torch.float32)
+        try:
+            # original time series
+            timex_file = os.path.join(datapath, "%s_x_original.npy" % split)
+            timex = np.load(timex_file)
+            timex = torch.from_numpy(timex).to(dtype=torch.float32)
+            timey_file = os.path.join(datapath, "%s_y_original.npy" % split)
+            timey = np.load(timey_file)
+            timey = torch.from_numpy(timey).to(dtype=torch.float32)
 
-        # x codes
-        codex_file = os.path.join(datapath, "%s_x_codes.npy" % (split))
-        codex = np.load(codex_file)
-        codex = torch.from_numpy(codex).to(dtype=torch.int64)
+            # x codes
+            codex_file = os.path.join(datapath, "%s_x_codes.npy" % (split))
+            codex = np.load(codex_file)
+            codex = torch.from_numpy(codex).to(dtype=torch.int64)
 
-        codey_oracle_file = os.path.join(datapath, "%s_y_codes_oracle.npy" % split)
-        if not os.path.exists(codey_oracle_file):
-            codey_oracle_file = os.path.join(datapath, "%s_y_codes.npy" % split)
-        codey_oracle = np.load(codey_oracle_file)
-        codey_oracle = torch.from_numpy(codey_oracle).to(dtype=torch.int64)
+            codey_oracle_file = os.path.join(datapath, "%s_y_codes_oracle.npy" % split)
+            if not os.path.exists(codey_oracle_file):
+                codey_oracle_file = os.path.join(datapath, "%s_y_codes.npy" % split)
+            codey_oracle = np.load(codey_oracle_file)
+            codey_oracle = torch.from_numpy(codey_oracle).to(dtype=torch.int64)
+        except FileNotFoundError as e:
+            # original time series
+            timex_file = os.path.join(datapath, "x_original.npy" )
+            timex = np.load(timex_file)
+            timex = torch.from_numpy(timex).to(dtype=torch.float32)
+            timey_file = os.path.join(datapath, "y_original.npy" )
+            timey = np.load(timey_file)
+            timey = torch.from_numpy(timey).to(dtype=torch.float32)
+
+            # x codes
+            codex_file = os.path.join(datapath, "x_codes.npy")
+            codex = np.load(codex_file)
+            codex = torch.from_numpy(codex).to(dtype=torch.int64)
+
+            codey_oracle_file = os.path.join(datapath, "y_codes_oracle.npy")
+            if not os.path.exists(codey_oracle_file):
+                codey_oracle_file = os.path.join(datapath, "y_codes.npy")
+            codey_oracle = np.load(codey_oracle_file)
+            codey_oracle = torch.from_numpy(codey_oracle).to(dtype=torch.int64)
 
         print("[Dataset][%s] %d of examples" % (split, timex.shape[0]))
 
@@ -146,10 +166,12 @@ def eval(args):
 
     # ------- MODEL: XCODES TO YTIME -------- #
     map_location = device
-    model_decode = torch.load(args.model_load_path + 'decode_checkpoint.pth', map_location=map_location)
+#    model_decode = torch.load(args.model_load_path + 'decode_checkpoint.pth', map_location=map_location)
+    model_decode = torch.load(args.model_load_path + 'final_model.pth', map_location=map_location)
 
     # ------- MODEL: MuStd ----------#
-    model_mustd = torch.load(args.model_load_path + 'mustd_checkpoint.pth', map_location=map_location)
+#    model_mustd = torch.load(args.model_load_path + 'mustd_checkpoint.pth', map_location=map_location)
+    model_mustd = torch.load(args.model_load_path + 'final_model.pth', map_location=map_location)
     model_mustd.revin_in = RevIN(
         num_features=Sin, affine=is_affine_revin
     )  # expects as input (B, T, S)
@@ -310,6 +332,11 @@ def get_params(data_type, data_path):
     elif data_type == "sunspot":
         batchsize = 16384
         Sin = Sout = 1
+        dataroot = data_path
+    
+    elif data_type == "nice":
+        batchsize = 512
+        Sin = Sout = 64
         dataroot = data_path
 
     else:

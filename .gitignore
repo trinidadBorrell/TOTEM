@@ -47,5 +47,13 @@ Backup[ ]of[ ]*.key/
 Backup[ ]of[ ]*.numbers
 
 #trini
-trini/
-process_zero_shot_data/data/pt2/
+/trini/
+/process_zero_shot_data/data/
+/forecasting/VQVAE_output_analysis/
+/output/
+
+#pretrained models
+/forecasting/pretrained
+
+#miscellaneous
+miscellaneous/

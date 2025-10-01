@@ -27,10 +27,22 @@ class ExtractData:
         x_reverted_all = []
         y_reverted_all = []
 
+        # Check if loader is empty
+        if len(loader) == 0:
+            print(f"ERROR: Data loader is empty! No data found.")
+            print(f"Please check:")
+            print(f"  - Data path: {self.args.root_path}")
+            print(f"  - Data file: {self.args.data_path}")
+            print(f"  - Make sure the data files exist and are accessible")
+            return None
+
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(loader):
             if i == 0:
+                print(f"Processing {len(loader)} batches...")
                 if batch_x.shape[-1] == batch_y.shape[-1]:
                     num_sensors = batch_x.shape[-1]
+                    print(f"Found {num_sensors} sensors")
+                    print(f"Batch shapes: X={batch_x.shape}, Y={batch_y.shape}")
                 else:
                     pdb.set_trace()
 
@@ -57,6 +69,11 @@ class ExtractData:
 
             x_reverted_all.append(np.array(x_predictions_original_space.detach().cpu()))
             y_reverted_all.append(np.array(y_predictions_original_space.detach().cpu()))
+
+        # Check if we have any data to process
+        if len(x_original_all) == 0:
+            print("ERROR: No batches were processed!")
+            return None
 
         x_original_arr = np.concatenate(x_original_all, axis=0)
         y_original_arr = np.concatenate(y_original_all, axis=0)
@@ -106,8 +123,8 @@ class ExtractData:
 
     def extract_data(self):
         device = 'cuda:' + str(args.gpu) if self.args.use_gpu else 'cpu'
-        map_location = 'cpu' if not self.args.use_gpu else None
-        vqvae_model = torch.load(args.trained_vqvae_model_path, map_location=map_location)
+        #map_location = 'cpu' if not self.args.use_gpu else None
+        vqvae_model = torch.load(args.trained_vqvae_model_path, map_location=device)
         vqvae_model.to(device)
         vqvae_model.eval()
 
@@ -124,15 +141,24 @@ class ExtractData:
             # These have dimension [bs, ntime, nvars]
             print('-------------TRAIN-------------')
             train_data_dict = self.one_loop_forecasting(train_loader, vqvae_model)
-            save_files_forecasting(self.args.save_path, train_data_dict, 'train', save_codebook=True)
+            if train_data_dict is not None:
+                save_files_forecasting(self.args.save_path, train_data_dict, 'train', save_codebook=True)
+            else:
+                print("Skipping train data saving due to errors.")
 
             print('-------------Val-------------')
             val_data_dict = self.one_loop_forecasting(vali_loader, vqvae_model)
-            save_files_forecasting(self.args.save_path, val_data_dict, 'val', save_codebook=False)
+            if val_data_dict is not None:
+                save_files_forecasting(self.args.save_path, val_data_dict, 'val', save_codebook=False)
+            else:
+                print("Skipping val data saving due to errors.")
 
             print('-------------Test-------------')
             test_data_dict = self.one_loop_forecasting(test_loader, vqvae_model)
-            save_files_forecasting(self.args.save_path, test_data_dict, 'test', save_codebook=True)
+            if test_data_dict is not None:
+                save_files_forecasting(self.args.save_path, test_data_dict, 'test', save_codebook=True)
+            else:
+                print("Skipping test data saving due to errors.")
 
 
 def save_files_forecasting(path, data_dict, mode, save_codebook):
@@ -140,6 +166,8 @@ def save_files_forecasting(path, data_dict, mode, save_codebook):
     np.save(path + mode + '_y_original.npy', data_dict['y_original_arr'])
     np.save(path + mode + '_x_codes.npy', data_dict['x_code_ids_all_arr'])
     np.save(path + mode + '_y_codes.npy', data_dict['y_code_ids_all_arr'])
+    np.save(path + mode + '_x_reverted.npy', data_dict['x_reverted_all_arr'])
+    np.save(path + mode + '_y_reverted.npy', data_dict['y_reverted_all_arr'])
 
     if save_codebook:
         np.save(path + 'codebook.npy', data_dict['codebook'])
@@ -151,7 +179,7 @@ def time2codes(revin_data, compression_factor, vqvae_encoder, vqvae_quantizer):
         revin_data: [bs x nvars x pred_len or seq_len]
         compression_factor: int
         vqvae_model: trained vqvae model
-        use_grad: bool, if True use gradient, if False don't use gradients
+        use_grad: bool, if True use gradient, if False don't use 
 
     Returns:
         codes: [bs, nvars, code_dim, compressed_time]
@@ -281,7 +309,10 @@ if __name__ == '__main__':
 
     print('Args in experiment:')
     print(args)
-
+    print('GPU:', torch.cuda.is_available())
+    #which gpu is being used
+    print('current GPU:', torch.cuda.current_device())
+    print('GPU:', torch.cuda.get_device_name(args.gpu))
     Exp = ExtractData
     exp = Exp(args)  # set experiments
     exp.extract_data()
