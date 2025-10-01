@@ -22,7 +22,7 @@ CONTROL_BIDS=false
 if [ "$CONTROL_BIDS" = true ]; then
     BASE_PATH="/data/project/eeg_foundation/data/nice_derivatives/CONTROL_BIDS/nice_epochs_sfreq-100Hz_recombine-biosemi64"
 else
-    BASE_PATH="/data/project/eeg_foundation/data/data_250Hz_EGI256/nice_epochs3"
+    BASE_PATH="/data/project/eeg_foundation/data/data_250Hz_EGI256/nice_epochs4"
 fi
 SAVE_PATH="/data/project/eeg_foundation/data/data_250Hz_EGI256/processed_nice_data_256/DOC"
 SCRIPT_PATH="$(dirname "$(realpath "$0")")/../process_zero_shot_data/process_eeg_data_zero_shot.py"

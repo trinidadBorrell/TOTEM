@@ -21,8 +21,8 @@
 # ./step2_zero_shot.sh interactive
 
 # Configuration
-BASE_PATH="/data/project/eeg_foundation/data/processed_nice_data"
-SAVE_BASE_PATH="/data/project/eeg_foundation/data/zero_shot_data/pydata"
+BASE_PATH="/data/project/eeg_foundation/data/data_250Hz_EGI256/processed_nice_data_256/DOC"
+SAVE_BASE_PATH="/data/project/eeg_foundation/data/data_250Hz_EGI256/zero_shot_data/DOC/pydata"
 SCRIPT_PATH="$(dirname "$(realpath "$0")")/../forecasting/extract_zero_shot_data_single_df.py"
 VQVAE_MODEL_PATH="/home/triniborrell/home/projects/TOTEM/forecasting/pretrained/forecasting/checkpoints/final_model.pth"
 
@@ -32,6 +32,12 @@ RANDOM_SEED=2021
 DATA_NAME="neuro_zero_shot"
 TYPE_PRETRAINED="forecast"
 COMPRESSION_FACTOR=4
+
+# Memory Management Settings
+BATCH_SIZE=32  # Reduced from default 256 to prevent CUDA OOM
+# If you still get OOM errors, try reducing to 16 or 8
+# If you have more GPU memory, you can increase to 64 or 128
+
 # Note: SEQ_LEN and PRED_LEN not needed for whole data processing
 
 # Colors for output
@@ -40,6 +46,20 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+
+# Function to clear GPU memory
+clear_gpu_memory() {
+    print_info "Clearing GPU memory..."
+    python3 -c "
+import torch
+if torch.cuda.is_available():
+    torch.cuda.empty_cache()
+    torch.cuda.synchronize()
+    print(f'GPU memory cleared. Available: {torch.cuda.get_device_properties(0).total_memory - torch.cuda.memory_allocated(0):,} bytes')
+else:
+    print('CUDA not available')
+" 2>/dev/null || print_warning "Could not clear GPU memory"
+}
 
 # Function to print colored output
 print_info() {
@@ -157,6 +177,10 @@ process_subject() {
         
         print_info "Extracting VQVAE codes for subject $subject_id, $session_name..."
         
+        # Set CUDA memory optimization environment variables
+        export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+        export CUDA_LAUNCH_BLOCKING=1
+        
         # Run the Python extraction script for this session
         python3 "$SCRIPT_PATH" \
             --data "$DATA_NAME" \
@@ -169,7 +193,8 @@ process_subject() {
             --trained_vqvae_model_path "$VQVAE_MODEL_PATH" \
             --compression_factor $COMPRESSION_FACTOR \
             --classifiy_or_forecast "forecast" \
-            --random_seed $RANDOM_SEED
+            --random_seed $RANDOM_SEED \
+            --batch_size $BATCH_SIZE
         
         if [ $? -eq 0 ]; then
             print_success "Successfully processed $session_name for subject: $subject_id"
@@ -179,6 +204,9 @@ process_subject() {
             print_error "Failed to process $session_name for subject: $subject_id"
             ((session_failure_count++))
         fi
+        
+        # Clear GPU memory after each session to prevent accumulation
+        clear_gpu_memory
     done
     
     # Report session processing results
